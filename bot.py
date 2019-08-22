@@ -16,7 +16,7 @@ async def on_message(message):
         return
 
     channel = message.channel
-    print('Reading message from server "' + channel.guild.name + '". Content="' ++ message.content + '" from author "' + message.author.name + '"')
+    print('Reading message from server "' + channel.guild.name + '". Content="' + message.content + '" from author "' + message.author.name + '"')
 
     if channel.name != 'person-vouching':
         return
