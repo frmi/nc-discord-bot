@@ -15,6 +15,8 @@ async def on_message(message):
     if message.author == client.user:
         return
 
+    print('Reading message ' + message.content + "' from author '" + message.author.name + "'")
+
     channel = message.channel
     if channel.name != 'person-vouching':
         return
@@ -24,7 +26,7 @@ async def on_message(message):
         msg = 'Hello {0.author.mention}'.format(message)
 
     if message.content.startswith('!nobuddies'):
-        members = client.get_all_members()
+        members = channel.guild.members
         non_buddies = list()
         for member in members:
             if member.bot:
