@@ -1,18 +1,58 @@
-import discord
 import os
-from discord.ext import commands
+import discord
 
-bot = commands.Bot(command_prefix='$')
+TOKEN = os.environ['BOT_TOKEN']
 
-@bot.event
+client = discord.Client()
+
+validRoles = {'buddie', 'officer', 'nc aalborg', 'nc andet kontor'}
+
+@client.event
+async def on_message(message):
+    # we do not want the bot to reply to itself
+    if message.author == client.user:
+        return
+
+    msg = ''
+    channel = message.channel
+    if message.content.startswith('!hello'):
+        msg = 'Hello {0.author.mention}'.format(message)
+
+    if message.content.startswith('!nobuddies'):
+        members = client.get_all_members()
+        non_buddies = list()
+        for member in members:
+            if member.bot:
+                break
+
+            buddies_found = False
+            for role in member.roles:
+                if role.name.lower() in validRoles:
+                    buddies_found = True
+                    break
+
+            if not buddies_found:
+                non_buddies.append(member.display_name)
+
+        msg = 'Members found who does not have the \'Buddie\' role:\n```'
+        if len(non_buddies) > 0:
+            msg += '\n'.join(non_buddies)
+        else:
+            msg += 'All members are buddies'
+
+        msg += '```'
+
+    if msg == '':
+        return
+
+    await channel.send(msg)
+
+
+@client.event
 async def on_ready():
     print('Logged in as')
-    print(bot.user.name)
-    print(bot.user.id)
+    print(client.user.name)
+    print(client.user.id)
     print('------')
 
-@bot.command()
-async def greet(ctx):
-    await ctx.send(":smiley: :wave: Hello, there!")
-
-bot.run(os.environ['BOT_TOKEN'])
+client.run(TOKEN)
