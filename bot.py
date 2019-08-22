@@ -7,7 +7,7 @@ TOKEN = os.environ['BOT_TOKEN']
 
 client = discord.Client()
 
-validRoles = {'buddie', 'officer', 'nc aalborg', 'nc andet kontor'}
+validRoles = {'buddies', 'officer', 'nc aalborg', 'nc andet kontor'}
 
 @client.event
 async def on_message(message):
