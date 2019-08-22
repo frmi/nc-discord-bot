@@ -14,6 +14,8 @@ async def on_message(message):
     # we do not want the bot to reply to itself
     if message.author == client.user:
         return
+    if not message.content.startswith('!'):
+        return
 
     channel = message.channel
     print('Reading message from server "' + channel.guild.name + '". Content="' + message.content + '" from author "' + message.author.name + '"')
