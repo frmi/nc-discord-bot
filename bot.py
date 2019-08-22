@@ -32,7 +32,7 @@ async def on_message(message):
         non_buddies = list()
         for member in members:
             if member.bot:
-                break
+                continue
 
             buddies_found = False
             for role in member.roles:
