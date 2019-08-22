@@ -1,6 +1,8 @@
 import os
 import discord
 
+print('Bot is starting')
+
 TOKEN = os.environ['BOT_TOKEN']
 
 client = discord.Client()
@@ -13,8 +15,11 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    msg = ''
     channel = message.channel
+    if channel.name != 'person-vouching':
+        return
+
+    msg = ''
     if message.content.startswith('!hello'):
         msg = 'Hello {0.author.mention}'.format(message)
 
