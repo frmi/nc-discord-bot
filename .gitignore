@@ -324,4 +324,7 @@ fabric.properties
 
 # Pyre type checker
 
+# Heroku
+.env
+
 # End of https://www.gitignore.io/api/python,django,intellij,pycharm
