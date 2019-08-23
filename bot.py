@@ -9,6 +9,9 @@ client = discord.Client()
 
 validRoles = {'buddies', 'officer', 'nc aalborg', 'nc andet kontor'}
 
+def nonBuddie(member):
+    return member.display_name + ' (joined ' + member.joined_at.strftime("%d-%m-%Y %H:%M:%S") + ")"
+
 @client.event
 async def on_message(message):
     # we do not want the bot to reply to itself
@@ -41,10 +44,11 @@ async def on_message(message):
                     break
 
             if not buddies_found:
-                non_buddies.append(member.display_name)
+                non_buddies.append(nonBuddie(member))
 
-        msg = 'Members found who does not have the \'Buddie\' role:\n```'
+        msg = 'Members found who does not have the \'Buddies\' role:\n'
         if len(non_buddies) > 0:
+            msg += '\n**Non-buddies**\n```'
             msg += '\n'.join(non_buddies)
         else:
             msg += 'All members are buddies'
