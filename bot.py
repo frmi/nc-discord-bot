@@ -46,6 +46,7 @@ async def on_message(message):
             if not buddies_found:
                 non_buddies.append(nonBuddie(member))
 
+        non_buddies.sort()
         msg = 'Members found who does not have the \'Buddies\' role:\n'
         if len(non_buddies) > 0:
             msg += '\n**Non-buddies**\n```'
