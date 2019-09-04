@@ -1,5 +1,7 @@
+import math
 import os
 import discord
+import urllib.request
 
 print('Bot is starting')
 
@@ -12,6 +14,54 @@ validRoles = {'buddies', 'officer', 'nc aalborg', 'nc andet kontor'}
 def nonBuddie(member):
     return member.display_name + ' (joined ' + member.joined_at.strftime("%d-%m-%Y %H:%M:%S") + ")"
 
+
+def read_queue_data():
+    page = urllib.request.urlopen('http://dump.hanbo.dk/firemawqueue.csv')
+    data = list(reversed(page.read().decode('utf-8').split('\n')[1:-1]))
+    sequence_tracker = -1
+    result_candidate = list()
+    for row in data:
+        time, number_of_players, sequence = row.split(',')
+        sequence = int(sequence)
+        number_of_players = int(number_of_players)
+        if sequence_tracker == -1:
+            if sequence == 0:
+                continue
+            else:
+                sequence_tracker = sequence
+                result_candidate.append(number_of_players)
+                continue
+        if sequence == sequence_tracker - 1:
+            result_candidate.append(number_of_players)
+            sequence_tracker = sequence
+            if sequence == 0:
+                break
+            continue
+        else:
+            sequence_tracker = -1
+            result_candidate = list()
+    return result_candidate
+
+
+def velocity(data):
+    distances = [j - i for i, j in zip(data[:-1], data[1:])]
+    skewed = skew_data(distances, 5)
+    return {"velocity":math.fabs(sum(skewed)/len(skewed)), "queue_start_size":data[-1]}
+
+
+def skew_data(distances, number_of_segments):
+    ret = []
+    dlen = len(distances)
+    segment_size = math.ceil(dlen/number_of_segments)
+    segments = [distances[i * segment_size:(i+1) * segment_size] for i in range(number_of_segments)]
+    for i, segment in enumerate(segments, start=1):
+        for element in segment:
+            for _ in range(i):
+                ret.append(element)
+    return ret
+
+
+
 @client.event
 async def on_message(message):
     # we do not want the bot to reply to itself
@@ -23,14 +73,23 @@ async def on_message(message):
     channel = message.channel
     print('Reading message from server "' + channel.guild.name + '". Content="' + message.content + '" from author "' + message.author.name + '"')
 
-    if channel.name != 'person-vouching':
+
+    if channel.name not in ('person-vouching', 'queue-discussion'):
         return
 
     msg = ''
+
+    if channel.name == 'queue-discussion' and message.content.startswith('!queue'):
+        vc = velocity(read_queue_data())
+
+        msg = 'Current throughput is {} per minute. Last I checked the queue was {}, meaning the expected queue time currently is {} minutes'.format(
+            math.trunc(vc.get('velocity')), vc.get("queue_start_size"),
+            math.trunc(vc.get("queue_start_size") / vc.get("velocity")))
+
     if message.content.startswith('!hello'):
         msg = 'Hello {0.author.mention}'.format(message)
 
-    if message.content.startswith('!nobuddies'):
+    if channel.name == 'person-vouching' and message.content.startswith('!nobuddies'):
         members = channel.guild.members
         non_buddies = list()
         for member in members:
