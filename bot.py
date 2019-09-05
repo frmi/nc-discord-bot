@@ -11,6 +11,7 @@ client = discord.Client()
 
 validRoles = {'buddies', 'officer', 'nc aalborg', 'nc andet kontor'}
 
+
 def nonBuddie(member):
     return member.display_name + ' (joined ' + member.joined_at.strftime("%d-%m-%Y %H:%M:%S") + ")"
 
@@ -20,12 +21,17 @@ def read_queue_data():
     data = list(reversed(page.read().decode('utf-8').split('\n')[1:-1]))
     sequence_tracker = -1
     result_candidate = list()
+    latest_queue_time = None
+
     for row in data:
         time, number_of_players, sequence = row.split(',')
         sequence = int(sequence)
         number_of_players = int(number_of_players)
         if sequence_tracker == -1:
             if sequence == 0:
+                if latest_queue_time is None:
+                    latest_queue_time = datetime.strptime(time, "%Y%m%d-%H:%M:%S")
+                    latest_queue_size = number_of_players
                 continue
             else:
                 sequence_tracker = sequence
@@ -35,18 +41,23 @@ def read_queue_data():
             result_candidate.append(number_of_players)
             sequence_tracker = sequence
             if sequence == 0:
+                if latest_queue_time is None:
+                    latest_queue_time = datetime.strptime(time, "%Y%m%d-%H:%M:%S")
+                    latest_queue_size = number_of_players
+                velocity_time = datetime.strptime(time, "%Y%m%d-%H:%M:%S")
                 break
             continue
         else:
             sequence_tracker = -1
             result_candidate = list()
-    return result_candidate
+    return {'velocity_data':result_candidate, 'velocity_time': velocity_time, 'latest_queue_size': latest_queue_size, 'latest_queue_time': latest_queue_time}
 
 
 def velocity(data):
-    distances = [j - i for i, j in zip(data[:-1], data[1:])]
+    distances = [j - i for i, j in zip(data.get('velocity_data')[:-1], data.get('velocity_data')[1:])]
     skewed = skew_data(distances, 5)
-    return {"velocity":math.fabs(sum(skewed)/len(skewed)), "queue_start_size":data[-1]}
+    return {"velocity": math.fabs(sum(skewed) / len(skewed)), "velocity_time": data.get('velocity_time'),
+            "latest_queue_time": data.get('latest_queue_time'), "latest_queue_size": data.get('latest_queue_size')}
 
 
 def skew_data(distances, number_of_segments):
@@ -82,9 +93,10 @@ async def on_message(message):
     if channel.name == 'queue-discussion' and message.content.startswith('!queue'):
         vc = velocity(read_queue_data())
 
-        msg = 'Current throughput is {} per minute. Last I checked the queue was {}, meaning the expected queue time currently is {} minutes'.format(
-            math.trunc(vc.get('velocity')), vc.get("queue_start_size"),
-            math.trunc(vc.get("queue_start_size") / vc.get("velocity")))
+        msg = 'At {} the queue was {} players. At {} the throughput was {} per minute. The expected queue time currently is {} minutes'.format(
+            vc.get("latest_queue_time").strftime("%b %d %H:%M"), vc.get("latest_queue_size"),
+            vc.get("velocity_time").strftime("%b %d %H:%M"), math.trunc(vc.get('velocity')),
+            math.trunc(vc.get("latest_queue_size") / vc.get("velocity")))
 
     if message.content.startswith('!hello'):
         msg = 'Hello {0.author.mention}'.format(message)
